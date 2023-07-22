@@ -157,4 +157,48 @@ class BookController extends Controller
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+
+    public function submitBook(Request $request) {
+        $request->validate([
+            'book_id' => 'required',
+            'user_id' => 'required'
+        ]);
+
+        try {
+            $bookMeta = BookMeta::where('book_id', '=', $request->input('book_id'))->firstOrFail();
+            $user = User::find($request->input('user_id'));
+            
+            $issued_user_ids = $bookMeta->issued_user_ids ? $bookMeta->issued_user_ids : "";
+            $issued_user_ids = explode(',', $issued_user_ids);
+            $key = array_search($user->id, $issued_user_ids);
+            if ($key !== false) {
+                unset($issued_user_ids[$key]);
+            }
+            $issued_user_ids = implode(',', $issued_user_ids);
+
+            $bookMeta->issued_user_ids = $issued_user_ids;
+            $bookMeta->save();
+
+            $issued_book_ids = $user->issued_book_ids ? $user->issued_book_ids : "";
+            $issued_book_ids = explode(',', $issued_book_ids);
+            $key = array_search($bookMeta->book_id, $issued_book_ids);
+            if ($key !== false) {
+                unset($issued_book_ids[$key]);
+            }
+            $issued_book_ids = implode(',', $issued_book_ids);
+
+            $user->issued_book_ids = $issued_book_ids;
+            $user->save();
+
+            return response()->json([
+                'message' => 'Book submitted successfully.',
+            ], Response::HTTP_CREATED);
+        } catch (\Exception $e) {
+            // Return an error response if something goes wrong
+            return response()->json([
+                'message' => 'Failed to submit book. book_id or user_id doesn\'t exist',
+                'error' => $e->getMessage(),
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
 }
