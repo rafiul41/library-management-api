@@ -20,6 +20,8 @@ use App\Http\Controllers\UserController;
 Route::resource('books', BookController::class);
 Route::resource('users', UserController::class);
 
+Route::post('books/issue', [BookController::class, 'issueBook']);
+
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });

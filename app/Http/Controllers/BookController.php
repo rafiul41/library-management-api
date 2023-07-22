@@ -7,6 +7,7 @@ use Illuminate\Http\Response;
 
 use App\Models\Book;
 use App\Models\BookMeta;
+use App\Models\User;
 
 class BookController extends Controller
 {
@@ -83,6 +84,56 @@ class BookController extends Controller
      */
     public function destroy(string $id)
     {
-        return Book::destroy($id);
+        try {
+            BookMeta::where('book_id', '=', $id)->delete();
+            Book::destroy($id);
+            return response()->json([
+                'message' => 'Book deleted successfully.',
+            ], Response::HTTP_CREATED);
+        } catch (\Exception $e) {
+            // Return an error response if something goes wrong
+            return response()->json([
+                'message' => 'Failed to delete book.',
+                'error' => $e->getMessage(),
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function issueBook(Request $request) {
+        $request->validate([
+            'book_id' => 'required',
+            'user_id' => 'required'
+        ]);
+
+        try {
+            $bookMeta = BookMeta::where('book_id', '=', $request->input('book_id'))->firstOrFail();
+            $user = User::find($request->input('user_id'));
+            
+            $issued_user_ids = $bookMeta->issued_user_ids ? "{$bookMeta->issued_user_ids},{$user->id}" : "{$user->id}";
+            $issued_user_ids = explode(',', $issued_user_ids);
+            $issued_user_ids = array_unique($issued_user_ids);
+            $issued_user_ids = implode(',', $issued_user_ids);
+
+            $bookMeta->issued_user_ids = $issued_user_ids;
+            $bookMeta->save();
+
+            $issued_book_ids = $user->issued_book_ids ? "{$user->issued_book_ids},{$bookMeta->book_id}" : "{$bookMeta->book_id}";
+            $issued_book_ids = explode(',', $issued_book_ids);
+            $issued_book_ids = array_unique($issued_book_ids);
+            $issued_book_ids = implode(',', $issued_book_ids);
+
+            $user->issued_book_ids = $issued_book_ids;
+            $user->save();
+
+            return response()->json([
+                'message' => 'Book issued successfully.',
+            ], Response::HTTP_CREATED);
+        } catch (\Exception $e) {
+            // Return an error response if something goes wrong
+            return response()->json([
+                'message' => 'Failed to issue book. book_id or user_id doesn\'t exist',
+                'error' => $e->getMessage(),
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
     }
 }
