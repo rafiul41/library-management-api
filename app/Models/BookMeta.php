@@ -9,5 +9,7 @@ class BookMeta extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['book_id', 'issued_user_ids', 'genre', 'publication_year'];
+    protected $fillable = ['book_id', 'genre', 'publication_year'];
+
+    protected $hidden = ['issued_user_ids'];
 }
