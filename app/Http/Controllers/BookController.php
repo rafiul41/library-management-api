@@ -74,9 +74,30 @@ class BookController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        $book = Book::find($id);
-        $book->update($request->all());
-        return $book;
+        try {
+            $book = Book::find($id);
+            $book->name = $request->input('name');
+            $book->author = $request->input('author');
+            $book->description = $request->input('description');
+            $book->price = $request->input('price');
+            $book->total_copies = $request->input('total_copies');
+            $book->save();
+
+            $bookMeta = BookMeta::where('book_id', '=', $id)->firstOrFail();
+            $bookMeta->genre = $request->input('genre');
+            $bookMeta->publication_year = $request->input('publication_year');
+            $bookMeta->save();
+
+            return response()->json([
+                'message' => 'Book updated successfully.',
+            ], Response::HTTP_CREATED);
+        } catch (\Exception $e) {
+            // Return an error response if something goes wrong
+            return response()->json([
+                'message' => 'Failed to update book.',
+                'error' => $e->getMessage(),
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
     }
 
     /**
