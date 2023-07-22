@@ -29,7 +29,7 @@ class BookController extends Controller
      */
     public function show(string $id)
     {
-        //
+        return Book::find($id);
     }
 
     /**
@@ -37,7 +37,9 @@ class BookController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        //
+        $book = Book::find($id);
+        $book->update($request->all());
+        return $book;
     }
 
     /**
@@ -45,6 +47,6 @@ class BookController extends Controller
      */
     public function destroy(string $id)
     {
-        //
+        return Book::destroy($id);
     }
 }

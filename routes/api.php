@@ -15,8 +15,7 @@ use App\Http\Controllers\BookController;
 |
 */
 
-Route::get('/books', [BookController::class, 'index']);
-Route::post('/books', [BookController::class, 'store']);
+Route::resource('books', BookController::class);
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
