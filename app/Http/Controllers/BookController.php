@@ -39,14 +39,14 @@ class BookController extends Controller
                 'price' => $request->input('price'),
                 'total_copies' => $request->input('total_copies'),
             ]);
-    
+
             $bookMeta = BookMeta::create([
                 'book_id' => $book->id,
                 'issued_user_ids' => '',
                 'genre' => $request->input('genre'),
                 'publication_year' => $request->input('publication_year'),
             ]);
-    
+
             return response()->json([
                 'message' => 'Book created successfully.',
                 'book' => $book,
@@ -120,7 +120,8 @@ class BookController extends Controller
         }
     }
 
-    public function issueBook(Request $request) {
+    public function issueBook(Request $request)
+    {
         $request->validate([
             'book_id' => 'required',
             'user_id' => 'required'
@@ -129,7 +130,7 @@ class BookController extends Controller
         try {
             $bookMeta = BookMeta::where('book_id', '=', $request->input('book_id'))->firstOrFail();
             $user = User::find($request->input('user_id'));
-            
+
             $issued_user_ids = $bookMeta->issued_user_ids ? "{$bookMeta->issued_user_ids},{$user->id}" : "{$user->id}";
             $issued_user_ids = explode(',', $issued_user_ids);
             $issued_user_ids = array_unique($issued_user_ids);
@@ -158,7 +159,8 @@ class BookController extends Controller
         }
     }
 
-    public function submitBook(Request $request) {
+    public function submitBook(Request $request)
+    {
         $request->validate([
             'book_id' => 'required',
             'user_id' => 'required'
@@ -167,7 +169,7 @@ class BookController extends Controller
         try {
             $bookMeta = BookMeta::where('book_id', '=', $request->input('book_id'))->firstOrFail();
             $user = User::find($request->input('user_id'));
-            
+
             $issued_user_ids = $bookMeta->issued_user_ids ? $bookMeta->issued_user_ids : "";
             $issued_user_ids = explode(',', $issued_user_ids);
             $key = array_search($user->id, $issued_user_ids);
@@ -197,6 +199,35 @@ class BookController extends Controller
             // Return an error response if something goes wrong
             return response()->json([
                 'message' => 'Failed to submit book. book_id or user_id doesn\'t exist',
+                'error' => $e->getMessage(),
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function listHoldingUsers(string $book_id)
+    {
+        try {
+            $bookMeta = BookMeta::where('book_id', '=', $book_id)->firstOrFail();
+            $commaSeparatedUserIds = $bookMeta->issued_user_ids;
+
+            if (!$commaSeparatedUserIds) {
+                return response()->json([
+                    'message' => 'No users are holding this book.',
+                    'holding_users' => [],
+                ], Response::HTTP_OK);
+            }
+
+            $arrayOfUserIds = explode(',', $commaSeparatedUserIds);
+
+            $holdingUsers = User::whereIn('id', $arrayOfUserIds)->get();
+
+            return response()->json([
+                'message' => 'List of users holding the book.',
+                'holding_users' => $holdingUsers,
+            ], Response::HTTP_OK);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Failed to fetch holding users.',
                 'error' => $e->getMessage(),
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }

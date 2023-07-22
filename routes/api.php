@@ -23,6 +23,8 @@ Route::resource('users', UserController::class);
 Route::post('books/issue', [BookController::class, 'issueBook']);
 Route::post('books/submit', [BookController::class, 'submitBook']);
 
+Route::get('books/{book_id}/holding-users', [BookController::class, 'listHoldingUsers']);
+
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
